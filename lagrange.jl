@@ -78,7 +78,8 @@ end
 
 
 #=
-#probe: formeln drucken
+#Probe: Formeln drucken
+#um die Formelzeichen in LaTex richtig darzustellen
 ersetzungen = [
     "0.5" => "\\frac12",
     "0.25" => "\\frac14",
@@ -132,12 +133,15 @@ for i in 1:4
 end
 =#
 
+
+#Vektorfunktion f
 f_vektor = Vector{Any}(undef, length(q))
 f_vektor[1] = simplify(expand(dL_diff[1] - M - (J_1 + 0.25(l^2)*m_1 + (l^2)*m_2)*phiPP - (0.5l*m_1*sin(phi) + l*m_2*sin(phi))*zPP - b20PP*(cos(phi)*cos(b20 + gam_S2) + sin(b20 + gam_S2)*sin(phi))*l*l_S2*m_2))
 f_vektor[2] = simplify(expand(dL_diff[2] - zPP * (m_1 + m_2 + m_3 + m_4) - (1//2)*L*b30PP*m_3*sin(b30) - b20PP*l_S2*m_2*sin(b20 + gam_S2) - ((1//2)*l*m_1*sin(phi) + l*m_2*sin(phi))*phiPP))
 f_vektor[3] = simplify(expand(dL_diff[3] - (J_3 + 0.25(L^2)*m_3)*b30PP - 0.5L*zPP*m_3*sin(b30)))
 f_vektor[4] = simplify(expand(dL_diff[4] - zPP*l_S2*m_2*sin(b20 + gam_S2) - (cos(phi)*cos(b20 + gam_S2) + sin(b20 + gam_S2)*sin(phi))*l*l_S2*m_2*phiPP - b20PP*(J_2 + (l_S2^2)*m_2)))
 
+#Massenmatrix
 M_q = Matrix{Any}(undef, length(q), length(q))
 M_q[1,1] = (J_1 + 0.25(l^2)*m_1 + (l^2)*m_2)
 M_q[1,2] = (0.5l*m_1*sin(phi) + l*m_2*sin(phi))
@@ -156,17 +160,9 @@ M_q[4,2] = l_S2*m_2*sin(b20 + gam_S2)
 M_q[4,3] = 0
 M_q[4,4] = J_2 + (l_S2^2)*m_2
 
-
-#=
-print("##############\n")
-for i in 1:4
-    println(f_vektor[i], "\n\n")
-end
-print("##############\n")
-=#
-
 @variables F_Bx, F_Bz
 
+#Generalisierte Kräfte ← Gelenkkraft B
 Q_ZB = Vector{Any}(undef, length(q))
 Q_ZB[1] = -F_Bz * l * sin(phi) + F_Bx * l * cos(phi)
 Q_ZB[2] = 0
@@ -175,11 +171,13 @@ Q_ZB[4] = -F_Bz * b * sin(b20 + gam_B) + F_Bz * b * cos(b20 + gam_B)
 
 @variables F, z_S
 
+#schwerpunkt des gesamtsystems → ableiten für Normalkraft am Fuß
 z_S = (1/(m_1 + m_2 + m_3 + m_4)) * (m_1 * (z - cos(phi) * l/2) + m_2 * (z - cos(phi) * l - cos(b20 + gam_S2) * l_S2) + m_3 * (z - a_z - cos(b30 * L/2)) + m_4 * (z - l_S4z))
 z_SP = 0
 z_SPP = 0
 
 #=
+#diese variante, wenn auch lesbarer, hat errors gegeben
 for j in 1:4
     z_SP += Symbolics.derivative(z_S, q[j]) * qP[j]
 end
@@ -188,6 +186,7 @@ for j in 1:4
     z_SPP += Symbolics.derivative(z_SP, q[j]) * qP[j] + Symbolics.derivative(z_SP, qP[j]) * qPP[j]
 end
 =#
+
 z_SP += Symbolics.derivative(z_S, q[1]) * qP[1]
 z_SP += Symbolics.derivative(z_S, q[2]) * qP[2]
 z_SP += Symbolics.derivative(z_S, q[3]) * qP[3]
@@ -198,15 +197,18 @@ z_SPP += Symbolics.derivative(z_SP, q[2]) * qP[2] + Symbolics.derivative(z_SP, q
 z_SPP += Symbolics.derivative(z_SP, q[3]) * qP[3] + Symbolics.derivative(z_SP, qP[3]) * qPP[3]
 z_SPP += Symbolics.derivative(z_SP, q[4]) * qP[4] + Symbolics.derivative(z_SP, qP[4]) * qPP[4]
 
+#Normalkraft am Fuß
 F = (m_1+m_2+m_3+m_4) * (z_SPP + g)
 
-
+#Generalisierte Kräfte von Normalkraft
 Q_ZF = Vector{Any}(undef, length(q))
 Q_ZF[1] = F * l * sin(phi)
 Q_ZF[2] = F
 Q_ZF[3] = 0
 Q_ZF[4] = F * l_F * sin(b20 + gam_F)
 
+
+#Koeffizientenmatrix aufstellen
 K_matrix = Matrix{Any}(undef, length(q)*2, length(q)*2)
 for i in 1:length(q)*2
     for j in 1:length(q)*2
@@ -220,6 +222,7 @@ for i in 1:4
     end
 end
 
+#Rechte Seite der Zustandsgleichung für Flug-/Kontaktphase
 flug_vektor = Vector{Any}(undef, length(q)*2)
 for i in 1:4
     flug_vektor[i] = qP[i]
@@ -233,8 +236,8 @@ for i in 1:4
 end
 
 #Nebenbedingungen
-gelenkB_x = -sin(phi) * l - sin(b20 + gam_B) * b ~ -a_x - sin(b20 + gam_B) * b
-gelenkB_z = -cos(phi) * l - cos(b20 + gam_B) * b ~ -a_z - cos(b30) * L
+gelenkB_x = -sin(phi) * l - sin(b20 + gam_B) * b + a_x + sin(b30 + gam_B) * b ~ 0
+gelenkB_z = -cos(phi) * l - cos(b20 + gam_B) * b + a_z + cos(b30) * L ~ 0
 bodenkontaktF = z - cos(phi) * l - cos(b20 + gam_F) * l_F ~ 0
 
 println("\nProgrammende\n")
