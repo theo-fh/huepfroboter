@@ -1,0 +1,229 @@
+\documentclass[]{scrartcl}
+\usepackage[ngerman]{babel}
+\usepackage{amsmath}
+
+%opening
+\title{Studienarbeit: Optimale Steuerung eines hüpfenden Roboters}
+\author{Theo Friedrich Höpfner}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+Abstract... Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet.
+\end{abstract}
+
+\newpage
+
+\tableofcontents
+
+\newpage
+
+\section{Herleitung des dynamischen Modells}
+
+\subsection{Beschreibung des Systems}
+[Bild des Systems]
+
+Zur Herleitung der Bewegungsgleichungen wird das Gelenk P wird als geöffnet betrachtet und später durch einwirkende Kräfte und geometrische Nebenbedingungen in der weiteren Rechnung geschlossen.
+
+Die Modellbildung erfolgt mit den generalisierten Koordinaten
+
+\begin{equation}
+\mathbf{q} = \left[\varphi \quad z \quad \beta_{30} \quad \beta_{20}\right]^{\top} \, .
+\end{equation}
+
+Relevante Ortsvektoren sind:
+
+$$
+\displaystyle
+\boldsymbol{r}_{\mathrm{S}}^{(1...4)}, \  \boldsymbol{r}_{B}^{(2)}, \ \boldsymbol{r}_{B}^{(3)}, \ \boldsymbol{r}_C, \ \boldsymbol{r}_D, \ \boldsymbol{r}_F 
+$$
+
+Für übersichtlichere Formeln werden außerdem folgende Parameter hinzugefügt:
+\begin{equation}
+\begin{aligned}
+\mathrm{d} = \sqrt{\mathrm{d_x}^2 + \mathrm{d_z}^2}, \ \mathrm{\gamma_D} = \arctan\left(\frac{\mathrm{d_x}}{\mathrm{d_z}}\right), \\
+\mathrm{l_F} = \sqrt{\mathrm{d_x}^2 + \mathrm{l}^2}, \ \mathrm{\gamma_F} = \arctan\left(\frac{\mathrm{d_x}}{\mathrm{l}}\right), \\
+\mathrm{b} = \sqrt{\mathrm{b_x}^2 + \mathrm{b_z}^2}, \ \mathrm{\gamma_B} = \arctan\left(\frac{\mathrm{b_x}}{\mathrm{b_z}}\right),
+\end{aligned}
+\end{equation}
+$$
+\mathrm{l_{S2}}, \mathrm{\gamma_{S2}}
+$$
+
+Dies kürzt Ausdrücke wie folgt:
+$$
+\mathrm{d_y} ~ \sin(\beta_{20}) + \mathrm{d_x} ~ \cos(\beta_{20}) \to \mathrm{d} ~ \sin(\beta_{20} + \mathrm{\mathrm{\gamma_D}})
+$$
+\subsection{Aufstellen von Energietermen}
+Aus den Schwerpunktlagen folgen die Schwerpunktgeschwindigkeiten $\boldsymbol{v}_{\mathrm{S}}^{(1...4)}$ und daraus die kinetische Energie
+\begin{equation}
+T = \sum_{i=1,\, i\neq2}^{4} \frac12 ~ \mathrm{J}_i ~ \dot{\mathrm{q}}_i^2 + \sum_{i=1}^{4} \frac12 ~ \mathrm{m}_i ~ \boldsymbol{v}_{\mathrm{S}}^{(i)} ~ \boldsymbol{v}_{\mathrm{S}}^{(i)\top} \,,
+\end{equation}
+
+wobei $\mathrm{J}_i$ das Massenträgheitsmoment bezüglich des Schwerpunkts des jeweiligen Körpers ist.
+
+Die potenzielle Energie des Systems setzt sich aus der potenziellen Energie der einzelnen Körper $V_i$ im Schwerefeld und der Feder $V_{\mathrm{F}}$ zusammen
+
+\begin{equation}
+	V_i = \mathrm{m}_i ~ \mathrm{g} ~ r_{iz}
+\end{equation}
+\begin{equation}
+	V_{\mathrm{F}} = \frac12 ~ \mathrm{k} ~ s_{\mathrm{F}}^2 \quad \text{mit} \quad s_{\mathrm{F}} =  \left\| \boldsymbol{r}_C - \boldsymbol{r}_D \right\| - \mathrm{l_0}
+\end{equation}
+\begin{equation}
+	V = \sum_{i=1}^{4} V_i + V_{\mathrm{F}}
+\end{equation}
+
+
+\subsection{Herleitung der Bewegungsgleichungen}
+Die generalisierte Kraft des Drehmoments $M$ berechnet sich durch
+$$
+\delta W = M \delta \varphi \ \to \ Q_1 = M \, .
+$$
+
+Nun werden am geöffneten Gelenk B an beiden Enden voneinander unabhängige Kräfte eingeführt
+\begin{equation}
+\vec{F}_{\mathrm{B}}^{(2)} = \vec{F}_{\mathrm{B}x}^{(2)} \, \vec{e}_{x0} \ + \ \vec{F}_{\mathrm{B}z}^{(2)} \, \vec{e}_{z0} \ \text{und} \ \vec{F}_{\mathrm{B}}^{(3)} = \vec{F}_{\mathrm{B}x}^{(3)} \, \vec{e}_{x0} \ + \ \vec{F}_{\mathrm{B}z}^{(3)} \, \vec{e}_{z0} \, .
+\label{aufstellenF_B}
+\end{equation}
+Deren virtuelle Arbeit beträgt
+\begin{equation}
+\delta W = \vec{F}_{\mathrm{B}x}^{(2)} \delta r_{\mathrm{B}x}^{(2)} \ + \
+\vec{F}_{\mathrm{B}z}^{(2)} \delta r_{\mathrm{B}z}^{(2)} \ + \ 
+\vec{F}_{\mathrm{B}x}^{(3)} \delta r_{\mathrm{B}x}^{(3)} \ + \ 
+\vec{F}_{\mathrm{B}z}^{(3)} \delta r_{\mathrm{B}z}^{(3)} \, .
+\end{equation}
+
+[Bild mit angetragenen Kräften]
+
+Daraus folgen die generalisierten Kräfte
+\begin{equation}
+	\mathbf{Q}_{\mathrm{B}} =
+	\begin{bmatrix}
+		F_{\mathrm{B}z}^{(2)} ~ \mathrm{l} ~ \sin(\varphi) - F_{\mathrm{B}x}^{(2)} ~ \mathrm{l} ~ \cos(\varphi)\\
+		F_{\mathrm{B}z}^{(2)} + F_{\mathrm{B}z}^{(3)} \\
+		F_{\mathrm{B}z}^{(3)} ~ \mathrm{L} ~ \sin(\beta_{30}) - F_{\mathrm{B}x}^{(3)} ~ \mathrm{L} ~ \cos(\beta_{30}) \\
+		F_{\mathrm{B}z}^{(2)} ~ \mathrm{b} ~ \sin(\beta_{20} + \mathrm{\gamma_B}) - F_{\mathrm{B}x}^{(2)} ~ \mathrm{b} ~ \cos(\beta_{20} + \mathrm{\gamma_B})
+	\end{bmatrix} \, .
+	\label{genKräfteQ_B}
+\end{equation}
+
+
+Mithilfe der Lagrange-Funktion $L$ und den generalisierten Kräften werden die Lagrangeschen Gleichungen 2. Art aufgestellt
+\begin{equation}
+	L = T - V \, ,
+\end{equation}
+\begin{equation}
+	\frac{\mathrm{d}}{\mathrm{dt}} ~ \frac{\partial L}{\partial \mathrm{\dot{q}}_i} - \frac{\partial L}{\partial \mathrm{q}_i} = Q_i \, .
+\end{equation}
+Die sich ergebenden Bewegungsgleichungen werden wie folgt formuliert:
+\begin{equation}
+\mathbf{M}_{\mathrm{q}}(\mathbf{q}) \ \ddot{\mathbf{q}} = \mathbf{f}(\mathbf{q}, \dot{\mathbf{q}}, M) + \mathbf{Q}_{\mathrm{B}}
+\label{formBewegungsgl}
+\end{equation}
+
+\textit{Anmerkung: Herleitung und Umformulierung der Gleichungen erfolgen im Julia-Skript.}
+
+\subsection{Schließen des Systems für Flug- und Kontaktphase}
+Nun wird das Gelenk im Punkt B als geschlossen betrachtet. Folgende geometrische Nebenbedingungen gelten:
+
+
+aus $\boldsymbol{r}_{B}^{(2)} = \boldsymbol{r}_{B}^{(3)}$:
+\begin{align}
+\mathrm{a_x} + \mathrm{L} ~ \sin(\beta_{30}) - \mathrm{l} ~ \sin(\varphi) - \mathrm{b} ~ \sin(\beta_{20} + \mathrm{\gamma_B}) = 0
+\label{bedingungGelenkBx}
+\\
+\mathrm{a_z} + \mathrm{L} ~ \cos(\beta_{30}) - \mathrm{l} ~ \cos(\varphi) - \mathrm{b} ~ \cos(\beta_{20} + \mathrm{\gamma_B}) = 0
+\label{bedingungGelenkBz}
+\end{align}
+Außerdem werden die generalisierten Kräfte aus \eqref{aufstellenF_B} mit folgender Beziehung besehen:
+\begin{equation}
+	\vec{F}_{\mathrm{B}} = \vec{F}_{\mathrm{B}}^{(3)} = -\vec{F}_{\mathrm{B}}^{(2)}
+	\label{kraftFBverbindung}
+\end{equation}
+Dementsprechend ändert sich in der Formulierung der Bewegungsgleichungen \eqref{formBewegungsgl} $\mathbf{Q}_{\mathrm{B}}$ \eqref{genKräfteQ_B} zu $\mathbf{Q}_{\mathrm{Z,B}}$, wenn die Gleichung \eqref{kraftFBverbindung} eingesetzt wird:
+\begin{equation}
+	\mathbf{Q}_{\mathrm{Z,B}} = 
+	\begin{bmatrix}
+		-F_{\mathrm{B}z} ~ \mathrm{l} ~ \sin(\varphi) + F_{\mathrm{B}x} ~ \mathrm{l} ~ \cos(\varphi)\\
+		0 \\
+		F_{\mathrm{B}z} ~ \mathrm{L} ~ \sin(\beta_{30}) - F_{\mathrm{B}x} ~ \mathrm{L} ~ \cos(\beta_{30}) \\
+		-F_{\mathrm{B}z} ~ \mathrm{b} ~ \sin(\beta_{20} + \mathrm{\gamma_B}) + F_{\mathrm{B}x} ~ \mathrm{b} ~ \cos(\beta_{20} + \mathrm{\gamma_B})
+	\end{bmatrix}
+\end{equation}
+
+In der Kontaktphase wird eine weitere Nebenbedingung eingeführt. Aus $r_{\mathrm{F}z} = 0$:
+\begin{equation}
+	z - \mathrm{l} ~ \cos(\varphi) - \mathrm{l_F} ~ \cos(\beta_{20} + \mathrm{\gamma_F}) = 0
+	\label{bedingungBodenkontakt}
+\end{equation}
+Der reibungsfreie Bodenkontakt in dieser Phase bewirkt eine Normalkraft $F$ am Fußgelenk. Sie wird berechnet mit
+\begin{equation}
+	F = ... \, .
+\end{equation}
+Ihre virtuelle Arbeit beträgt $\delta W = F \delta r_{\mathrm{F}z}.$ Daraus folgen die generalisierten Kräfte durch $F$
+\begin{equation}
+	\mathbf{Q}_{\mathrm{Z,F}} = 
+	\begin{bmatrix}
+		F ~ \mathrm{l} ~ \sin(\varphi) \\
+		F \\
+		0 \\
+		F ~ \mathrm{l_F} ~ \sin(\beta_{20} + \mathrm{\gamma_F})
+	\end{bmatrix} \, .
+\end{equation}
+Die Bewegungsgleichungen werden entsprechend ergänzt:
+\begin{equation}
+\mathbf{M}_{\mathrm{q}}(\mathbf{q}) \ \ddot{\mathbf{q}} = \mathbf{f}(\mathbf{q}, \dot{\mathbf{q}}, M) + \mathbf{Q}_{\mathrm{Z,B}} + \mathbf{Q}_{\mathrm{Z,F}}
+\end{equation}
+
+\subsection{Aufstellen der impliziten Zustandsformulierung für numerische Lösung}
+Zunächst wird der Zustandsvektor aufgestellt:
+\begin{equation}
+	\mathbf{x} =
+	\begin{bmatrix}
+		\mathbf{q} \\
+		\dot{\mathbf{q}}
+	\end{bmatrix}
+	\ \to \ 
+	\dot{\mathbf{x}} =
+	\begin{bmatrix}
+		\dot{\mathbf{q}} \\
+		\ddot{\mathbf{q}}
+	\end{bmatrix}
+\end{equation}
+
+Dann können die Bewegungsgleichungen in folgende Form überführt werden:
+\begin{equation}
+	\mathbf{K(q)} ~ \dot{\mathbf{x}} = 
+	\begin{cases}
+		\begin{bmatrix}
+			\dot{\mathbf{q}} \\
+			 \mathbf{f}(\mathbf{q}, \dot{\mathbf{q}}, M) + \mathbf{Q}_{\mathrm{Z,B}}
+		\end{bmatrix}
+		, & \text{Flugphase}, \\
+		\begin{bmatrix}
+			\dot{\mathbf{q}} \\
+			\mathbf{f}(\mathbf{q}, \dot{\mathbf{q}}, M) + \mathbf{Q}_{\mathrm{Z,B}} + \mathbf{Q}_{\mathrm{Z,F}}
+		\end{bmatrix}
+		, & \text{Kontaktphase}
+	\end{cases}
+	\label{zustandsform}
+\end{equation}
+
+Wobei die Koeffizientenmatrix folgende Form besitzt:
+\begin{equation}
+	\mathbf{K(q)} =
+	\begin{bmatrix}
+		\mathbf{I}_4 & \mathbf{0}_{4 \times 4} \\
+		\mathbf{0}_{4 \times 4} & \mathbf{M}_{\mathrm{q}}(\mathbf{q})
+	\end{bmatrix}
+	\label{koeffMatrix}
+\end{equation}
+
+Für die Lösung des Optimierungsproblems werden dem Julia-Skript jeweils für Flug- und Kontaktphase die Koeffizientenmatrix \eqref{koeffMatrix}, die rechte Seite der Gleichung \eqref{zustandsform} sowie die Nebenbedingungen \eqref{bedingungGelenkBx}, \eqref{bedingungGelenkBz}, \eqref{bedingungBodenkontakt} übergeben.
+
+\section{Formulierung und numerische Lösung des Optimierungsproblems}
+\end{document}
