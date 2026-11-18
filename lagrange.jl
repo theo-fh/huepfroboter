@@ -76,64 +76,6 @@ for i in 1:4
     dL_diff[i] = simplify(differenz)
 end
 
-
-#=
-#Probe: Formeln drucken
-#um die Formelzeichen in LaTex richtig darzustellen
-ersetzungen = [
-    "0.5" => "\\frac12",
-    "0.25" => "\\frac14",
-
-    "\\mathtt{phiPP}" => "\\ddot{\\varphi}",
-    "\\mathtt{phiP}" => "\\dot{\\varphi}",
-    "\\mathtt{phi}"   => "\\varphi",
-
-    "\\mathtt{zPP}" => "\\ddot{z}",
-    "\\mathtt{zP}" => "\\dot{z}",
-    "\\mathtt{z}"   => "z",
-    
-    "\\mathtt{b30PP}" => "\\ddot{\\beta_{30}}",
-    "\\mathtt{b30P}" => "\\dot{\\beta_{30}}",
-    "\\mathtt{b30}"   => "\\beta_{30}",
-
-    "\\mathtt{b20PP}" => "\\ddot{\\beta_{20}}",
-    "\\mathtt{b20P}" => "\\dot{\\beta_{20}}",
-    "\\mathtt{b20}"   => "\\beta_{20}",
-
-    "\\mathtt{m\\_1}" => "m_1",
-    "\\mathtt{m\\_2}" => "m_2",
-    "\\mathtt{m\\_3}" => "m_3",
-    "\\mathtt{m\\_4}" => "m_4",
-
-    "\\mathtt{J\\_1}" => "J_1",
-    "\\mathtt{J\\_2}" => "J_2",
-    "\\mathtt{J\\_3}" => "J_3",
-
-    "\\mathtt{gam\\_D}" => "\\gamma_D",
-    "\\mathtt{gam\\_S2}" => "\\gamma_{S2}",
-    "\\mathtt{gam\\_B}" => "\\gamma_B",
-
-    "\\mathtt{l\\_S2}" => "l_{S2}",
-    "\\mathtt{l\\_C}" => "l_C",
-    "\\mathtt{l\\_0}" => "l_0",
-
-    "\\mathtt{F2\\_Bx}" => "F^{(2)}_{Bx}",
-    "\\mathtt{F2\\_Bz}" => "F^{(2)}_{Bz}",
-    "\\mathtt{F3\\_Bx}" => "F^{(3)}_{Bx}",
-    "\\mathtt{F3\\_Bz}" => "F^{(3)}_{Bz}"
-
-]
-
-println("############ FORMELN: ###############")
-for i in 1:4
-    print("\\large{\\textbf{Nach \$q_", i, " = ", q_formel[i], "\$:}}\n")
-    string = "\\begin{dmath}\n" * latexify(Q[i], env=:raw) * " = " * latexify(dL_diff[i], env=:raw) * "\n\\end{dmath}\n\n\n"
-    string_clean = reduce(replace, ersetzungen; init=string)
-    print(string_clean)
-end
-=#
-
-
 #Vektorfunktion f
 f_vektor = Vector{Any}(undef, length(q))
 f_vektor[1] = simplify(expand(dL_diff[1] - M - (J_1 + 0.25(l^2)*m_1 + (l^2)*m_2)*phiPP - (0.5l*m_1*sin(phi) + l*m_2*sin(phi))*zPP - b20PP*(cos(phi)*cos(b20 + gam_S2) + sin(b20 + gam_S2)*sin(phi))*l*l_S2*m_2))
@@ -176,17 +118,6 @@ z_S = (1/(m_1 + m_2 + m_3 + m_4)) * (m_1 * (z - cos(phi) * l/2) + m_2 * (z - cos
 z_SP = 0
 z_SPP = 0
 
-#=
-#diese variante, wenn auch lesbarer, hat errors gegeben
-for j in 1:4
-    z_SP += Symbolics.derivative(z_S, q[j]) * qP[j]
-end
-z_SPP = 0
-for j in 1:4
-    z_SPP += Symbolics.derivative(z_SP, q[j]) * qP[j] + Symbolics.derivative(z_SP, qP[j]) * qPP[j]
-end
-=#
-
 z_SP += Symbolics.derivative(z_S, q[1]) * qP[1]
 z_SP += Symbolics.derivative(z_S, q[2]) * qP[2]
 z_SP += Symbolics.derivative(z_S, q[3]) * qP[3]
@@ -198,14 +129,14 @@ z_SPP += Symbolics.derivative(z_SP, q[3]) * qP[3] + Symbolics.derivative(z_SP, q
 z_SPP += Symbolics.derivative(z_SP, q[4]) * qP[4] + Symbolics.derivative(z_SP, qP[4]) * qPP[4]
 
 #Normalkraft am Fuß
-F = (m_1+m_2+m_3+m_4) * (z_SPP + g)
+F_N = (m_1+m_2+m_3+m_4) * (z_SPP + g)
 
 #Generalisierte Kräfte von Normalkraft
 Q_ZF = Vector{Any}(undef, length(q))
-Q_ZF[1] = F * l * sin(phi)
-Q_ZF[2] = F
+Q_ZF[1] = F_N * l * sin(phi)
+Q_ZF[2] = F_N
 Q_ZF[3] = 0
-Q_ZF[4] = F * l_F * sin(b20 + gam_F)
+Q_ZF[4] = F_N * l_F * sin(b20 + gam_F)
 
 
 #Koeffizientenmatrix aufstellen
@@ -236,8 +167,16 @@ for i in 1:4
 end
 
 #Nebenbedingungen
-gelenkB_x = -sin(phi) * l - sin(b20 + gam_B) * b + a_x + sin(b30 + gam_B) * b ~ 0
-gelenkB_z = -cos(phi) * l - cos(b20 + gam_B) * b + a_z + cos(b30) * L ~ 0
-bodenkontaktF = z - cos(phi) * l - cos(b20 + gam_F) * l_F ~ 0
+gelenkB_x = -sin(phi) * l - sin(b20 + gam_B) * b + a_x + sin(b30 + gam_B) * b
+gelenkB_z = -cos(phi) * l - cos(b20 + gam_B) * b + a_z + cos(b30) * L
+bodenkontaktF = z - cos(phi) * l - cos(b20 + gam_F) * l_F
 
-println("\nProgrammende\n")
+g_flug = Vector{Any}(undef, 2)
+g_flug[1] = gelenkB_x
+g_flug[2] = gelenkB_z
+
+g_kontakt = Vector{Any}(undef, 3)
+g_kontakt[1] = gelenkB_x
+g_kontakt[2] = gelenkB_z
+g_kontakt[3] = bodenkontaktF
+#g_flug und g_kontakt jeweils = 0

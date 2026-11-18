@@ -4,6 +4,8 @@
 \usepackage{graphicx}
 \usepackage{breqn}
 \usepackage{float}
+\usepackage{amssymb}
+\usepackage{caption}
 
 %opening
 \title{Studienarbeit: Optimale Steuerung eines hüpfenden Roboters}
@@ -34,25 +36,135 @@ Wie im Bild des Modells zu sehen, besteht der Oberschenkel des Beins aus zwei ei
 
 Die genaue Geometrie der Bauteile im Aufbau unterscheidet sich von den in der Skizze zu sehenden Elementen. Deren Parameter werden im Laufe der Arbeit jedoch so ausgewählt, dass das aufgestellte Modell das Verhalten des echten Systems näherungsweise hervorsagt.
 
-\subsection{Angewandte Optimierungsverfahren}
-Rechercheergebnisse
+\subsection{Angewandtes Optimierungsverfahren}
+Da das Ziel der Arbeit optimale Steuerung des anliegenden Drehmoments ist, liegt eine Extremwertaufgabe eines Funktionals vor. Im Gegensatz zu einer Funktion wird hier nicht einem Satz von Variablen eine Zahl zugeordnet: $F: \mathbb{R}^n \to \mathbb{R}$, die ihr Minimum oder Maximum mit den gesuchten Variablen erreichen soll. Stattdessen ist in unserem Fall die Optimierungsvariable selbst eine Funktion: $J: \{u(x)\} \to \mathbb{R}$ mit bestimmten Nebenbedingungen. Das Optimierungsproblem in unserem Fall kann direkt und indirekt gelöst werden.
+
+\subsubsection{Indirektes Verfahren}
+Indirekte Verfahren leiten notwendige Bedingungen für eine optimale Lösung analytisch mittels Variationsrechnung her.
+
+Hierbei bilden die Zustandsdifferentialgleichungen die Nebenbedingungen.
+\begin{equation}
+\dot{\mathbf{x}}(t) = \mathbf{f}\left(\mathbf{x}(t), \mathbf{u}(t), t\right) \, \implies  \dot{\mathbf{x}}(t) - \mathbf{f}\left(\mathbf{x}(t), \mathbf{u}(t), t\right) = 0 \, ,
+\label{Zustandsdiff}
+\end{equation}
+wobei $\mathbf{x}$ der Zustandsvektor, hier bestehend aus allen Winkeln bzw. Positionen und deren Geschwindigkeiten und $\mathbf{u}$ der Eingangsvektor ist, in unserem Fall lediglich das anliegende Drehmoment. $\mathbf{f}$ ist eine nichtlineare Funktion, die beschreibt, wie die aktuellen Zustände und Steuereingänge die Änderungsraten $\dot{\mathbf{x}}$ beeinflussen.
+
+Die Zielfunktion wird formuliert als
+\begin{equation}
+J = \int_{t_0}^{t_{\mathrm{e}}} L\left(\mathbf{x}(t), \mathbf{u}(t)\right) \mathrm{d}t \, ,
+\end{equation}
+wobei $L$ den Kosten, in unserem Fall $M^2$ entspricht.
+
+Die Nebenbedingung \eqref{Zustandsdiff} wird mit einem Vektor zeitabhängiger Lagrange-Multiplikatoren $\boldsymbol{\lambda}(t)$ multipliziert und in die Zielfunktion eingebunden. Daraus folgt das erweiterte Funktional
+
+\begin{equation}
+	\bar{J} = \int_{t_0}^{t_e} \left[ L(\mathbf{x}, \mathbf{u}) + \boldsymbol{\lambda}^{\top} \left( \mathbf{f}(\mathbf{x}, \mathbf{u}) - \dot{\mathbf{x}} \right) \right] \mathrm{d}t \, ,
+\end{equation}
+
+Man definiert den Hamilton-Operator
+\begin{equation}
+	H(\mathbf{x}, \mathbf{u}, \boldsymbol{\lambda}) = L_0(\mathbf{x}, \mathbf{u}) + \boldsymbol{\lambda}^{\top} \mathbf{f}(\mathbf{x}, \mathbf{u})\, ,
+\end{equation}
+
+sodass sich das erweiterte Funktional vereinfacht zu
+\begin{equation}
+	\bar{J} = \int_{t_0}^{t_e} \left[H(\mathbf{x}, \mathbf{u}, \boldsymbol{\lambda}) - \boldsymbol{\lambda}^{\top} \dot{\mathbf{x}} \right] \mathrm{d}t \, .
+\end{equation}
+
+Um einen Extremwert zu finden, wird nach den Argumenten gesucht, bei denen eine kleine Variation zu keiner Änderung des erweiterten Funktionals führt
+\begin{equation}
+	\delta \bar{J} = \int_{t_0}^{t_e} \left[ \frac{\partial H}{\partial \mathbf{x}} \delta\mathbf{x} + \frac{\partial H}{\partial \mathbf{u}} \delta\mathbf{u} + \frac{\partial H}{\partial \boldsymbol{\lambda}} \delta\boldsymbol{\lambda} - \boldsymbol{\lambda}^{\top} \delta\dot{\mathbf{x}} \right] \mathrm{d}t = 0 \, .
+\end{equation}
+
+Aus partieller Integration des letzten Summanden folgt die Form
+
+\begin{equation}
+	\delta \bar{J} = \left[ \boldsymbol{\lambda}(t_e)^{\top} \delta\mathbf{x}(t_e) \right] + \int_{t_0}^{t_e} \left[ \left( \frac{\partial H}{\partial \mathbf{x}} + \dot{\boldsymbol{\lambda}}^{\top} \right) \delta\mathbf{x} + \frac{\partial H}{\partial \mathbf{u}} \delta\mathbf{u} + \left( \frac{\partial H}{\partial \boldsymbol{\lambda}} - \dot{\mathbf{x}}^{\top} \right) \delta\boldsymbol{\lambda} \right] \mathrm{d}t = 0
+\end{equation}
+
+\textit{Achtung: Dies liefert lokale Extremwerte. Bedingung dafür, dass diese sicher den globalen Minimum entsprechen, ist eine Konvexität des zugrundeliegenden Funktionals. In unserem Fall wird dies nicht erfüllt, da die im erweiterten Funktional enthaltenen Bewegungsgleichungen hochgradig nichtlinear sind. Das Verfahren liefert also nicht unbedingt die bestmögliche Steuerung.}
+
+Diese Gleichung muss für beliebige, voneinander unabhängige Variationen $\delta \mathbf{x}$, $\delta \mathbf{u}$ und $\delta \boldsymbol{\lambda}$ gelten. Also müssen alle Summanden gleichzeitig gleich null sein. Dies liefert
+
+\begin{equation}
+	\frac{\partial H}{\partial \boldsymbol{\lambda}} - \dot{\mathbf{x}} = 0 \quad \implies \quad \dot{\mathbf{x}} = \frac{\partial H}{\partial \boldsymbol{\lambda}} = \mathbf{f}(\mathbf{x}, \mathbf{u}) \, ,
+	\label{zustandsglErneut}
+\end{equation}
+also die Zustandsdifferentialgleichung vom Anfang, welche das dynamische Verhalten des Systems beschreibt,
+\begin{equation}
+	\frac{\partial H}{\partial \mathbf{x}} + \dot{\boldsymbol{\lambda}}^{\top} = 0 \quad \implies \quad \dot{\boldsymbol{\lambda}} = -\left(\frac{\partial H}{\partial \mathbf{x}}\right)^{\top} \, ,
+	\label{sensitivitaet}
+\end{equation}
+welches den Zeitverlauf der sog. Sensitivität  $\boldsymbol{\lambda}(t)$ beschreibt, und zuletzt
+\begin{equation}
+	\frac{\partial H}{\partial \mathbf{u}} = 0 \, ,
+	\label{indirektVEingangsgroesse}
+\end{equation}
+welches den Verlauf der Eingangsgröße, in unserem Fall das Drehmoment vorschreibt. Diese Gleichung lässt sich nach dem Verlauf der Eingangsgrößen $\mathbf{u}(t)$ lösen
+
+Außerdem wird der Term $\left[ \boldsymbol{\lambda}(t_e)^{\top} \delta\mathbf{x}(t_e) \right]$ hier durch angeben eines festen Endpunktes, also einer maximalen Sprunghöhe, bei welcher die Sprungkurve anhält, zu null gesetzt.
+
+Das aus \eqref{indirektVEingangsgroesse} ermittelte $\mathbf{u}(t)$ wird in die Gleichungen \eqref{zustandsglErneut} und \eqref{sensitivitaet} eingesetzt, woraus ein Zweipunkt-Randwertproblem entsteht.
+
+\subsubsection{Direkte Kollokation}
+Das zuvor geschilderte indirekte Verfahren geht bei unserem System mit einem erheblichen analytischen Aufwand einher, was sehr fehleranfällig ist und enorm viel Zeit in Anspruch nimmt. Deshalb wird im Rahmen dieser Arbeit zur direkten Kollokation gegriffen.
+
+Dort werden Zustand und Steuerung diskretisiert und als zusätzliche Optimierungsvariablen verwendet. Dies überspringt das analytische Optimieren über die Sensitivität $\boldsymbol{\lambda}$, welches beim indirekten Verfahren vor dem Diskretisieren zur Lösung des Zweipunkt-Randwertproblems geschieht.
+
+Hierfür wird der Zeitverlauf in $n$ Zeitschritte mit $\Delta t = \frac{t_{\mathrm{ges}}}{n} = t_{k+1} - t_k$ aufgeteilt.
+
+Integrieren der Zustandsdifferentialgleichungen liefert
+\begin{align}
+	\int_{t_k}^{t_{k+1}} \dot{\mathbf{x}} \mathrm{d}t = \int_{t_k}^{t_{k+1}} \mathbf{f}\left(\mathbf{x}, \mathbf{u}\right) \mathrm{d}t \\
+	\mathbf{x}_{k+1} - \mathbf{x}_k = \int_{t_k}^{t_{k+1}} \mathbf{f}\left(\mathbf{x}, \mathbf{u}\right) \mathrm{d}t \, .
+\end{align}
+
+Annäherung des Integrals mit der Trapezregel resultiert in
+\begin{equation}
+	\begin{gathered}
+		\mathbf{x}_{k+1} - \mathbf{x}_k = \frac{\Delta t}{2} \left[ \mathbf{f}\left(\mathbf{x}_{\mathrm{k+1}}, \mathbf{u}_{\mathrm{k+1}}\right) + \mathbf{f}\left(\mathbf{x}_{\mathrm{k}}, \mathbf{u}_{\mathrm{k}}\right) \right] \\
+		\implies \ \mathbf{x}_{k+1} - \mathbf{x}_k - \frac{\Delta t}{2} \left[ \mathbf{f}\left(\mathbf{x}_{\mathrm{k+1}}, \mathbf{u}_{\mathrm{k+1}}\right) + \mathbf{f}\left(\mathbf{x}_{\mathrm{k}}, \mathbf{u}_{\mathrm{k}}\right) \right] = 0 \, .
+	\end{gathered}
+\end{equation}
+
+Die Zielfunktion wird ebenso diskretisiert
+\begin{equation}
+	\begin{gathered}
+		\int_{t_0}^{t_0 + t_{\mathrm{ges}}} L ~ \mathrm{d}t \approx \sum_{k=0}^{n-1} \frac{\Delta t}{2} \left[L_{k+1} + L_k\right]
+	\end{gathered}
+\end{equation}
+(In dieser Anwendung gilt $L = M^2$ )
+
+Daraus entsteht ein endlichdimensionales nichtlineares Optimierungsproblem mit den gesuchten Werten $M_k$ und $\mathbf{q}_k$ für jede der $n$ Stützstellen.
+\newpage
+
+\subsubsection{Innere-Punkte-Verfahren}
+
+\begin{figure}[H]
+	\centering
+	\captionsetup{justification=centering}
+	\includegraphics[scale=0.5]{Abbildungen/innere_punkte.pdf}
+	\caption{Veranschaulichendes Beispiel zum Verfahren. Quelle: wikipedia.org/wiki/Interior-point\_method}
+\end{figure}
+
+Durch Diskretisierung mittels direkter Kollokation wird das Lösen des Optimierungsproblems durch das Innere-Punkte-Verfahren möglich. Dies geschieht im Rahmen dieser Arbeit durch ein Julia-Programm und zeichnet sich dadurch aus, dass es der zu minimierenden Zielfunktion Terme wie $-\mu \ln(g(x))$ hinzufügt. $g(x)$ ist hier eine Ungleichheitsnebenbedingung, z.B. $M \leq M_{\mathrm{max}} \to g(x) = M - M_{\mathrm{max}} \leq 0$.
+
+Nähern sich die Optimierungsvariablen den Maximalwerten aus solchen Nebenbedingungen an, geht entsprechend $g \to 0$ und die Kostenfunktion wird um riesige Beträge gegen $-\ln(g(x)) \to \infty$ erhöht.
+
+Mit jedem Lösungsschritt wird der Koeffizient $\mu$ bis $\mu = 0$ verringert, sodass eine Annäherung an die Grenzen des erlaubten Raums ermöglicht wird. Der Solver ermittelt also nicht direkt das Minimum, sondern bewegt sich entlang eines Pfades im Inneren dieses Vektorraumes.
+
+Zwischen den einzelnen Lösungsschritten werden die sog. \textit{KKT-Bedingungen} für Optimalität mit dem Newton-Verfahren gelöst, welches iterativ die exakte Suchrichtung bestimmt, um den optimalen Systemzustand und die zugehörigen Lagrange-Multiplikatoren für die jeweiligen Durchläufe schrittweise zu ermitteln. Diese KKT-Bedingungen beziehen sich u.a. auf die Gleichheitsnebenbedingungen des Systems, also z.B. die diskretisierten Zustandsdifferentialgleichungen.
 
 \section{Herleitung des dynamischen Modells mittels Langrangeschen Gleichungen 2. Art}
 
 \subsection{Beschreibung des Systems}
 \begin{figure}[H]
 	\centering
-	\includegraphics[scale=0.6]{Abbildungen/system_geschlossen_parameter_koord.pdf}
+	\includegraphics[scale=0.6]{Abbildungen/system_offen_parameter_koord.pdf}
 	\caption{Parameter und Koordinaten des Systems}
 \end{figure}
 
 Zur Herleitung der Bewegungsgleichungen wird das Gelenk im Punkt $B$ als geöffnet betrachtet (siehe folgende Abb. \ref{abbildung_system_offen}) und später durch einwirkende Kräfte und geometrische Nebenbedingungen in der weiteren Rechnung geschlossen.
-\begin{figure}[H]
-	\centering
-	\includegraphics[scale=0.6]{Abbildungen/bild_aufgeschnitten.pdf}
-	\caption{Im Punkt B geöffnetes System}
-	\label{abbildung_system_offen}
-\end{figure}
 
 Die Modellbildung erfolgt mit den generalisierten Koordinaten
 
@@ -368,6 +480,7 @@ Entsprechend \eqref{bedingungBodenkontakt}, \eqref{bedingungGelenkBx} und \eqref
 		\mathbf{g}_{\mathrm{Kontakt}}
 		, & \text{Kontaktphase}
 	\end{cases}
+	\label{nebenbedingungen}
 \end{equation}
 
 mit
@@ -385,7 +498,7 @@ mit
 \end{equation}
 
 
-Für die Lösung des Optimierungsproblems werden dem Julia-Skript jeweils für Flug- und Kontaktphase die Koeffizientenmatrix \eqref{koeffMatrix}, die rechte Seite der Gleichung \eqref{zustandsform} sowie die Nebenbedingungen \eqref{bedingungGelenkBx}, \eqref{bedingungGelenkBz}, \eqref{bedingungBodenkontakt} übergeben.
+Für die Lösung des Optimierungsproblems werden dem Julia-Skript jeweils für Flug- und Kontaktphase die Koeffizientenmatrix \eqref{koeffMatrix}, die rechte Seite der Gleichung \eqref{zustandsform} sowie die Nebenbedingungen \eqref{nebenbedingungen} übergeben.
 
 \section{Formulierung und numerische Lösung des Optimierungsproblems}
 \end{document}
