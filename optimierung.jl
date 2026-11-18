@@ -3,12 +3,14 @@ using NLsolve
 
 include("lagrange.jl")
 
-#Symbolic-Formeln kompilieren, sodass sie vom Solver verwendet werden können
+#Symbolic-Formeln in funktionen kompilieren, sodass sie vom Solver verwendet werden können
+#TODO: Symbolische Variablen die eh konstant bleiben (z.B. l, m_1) vorher zu konstanten mit substitution über dein Dict machen
 M_func, _ = Symbolics.build_function(M_q, [q; qP; params...])
 f_func, _ = Symbolics.build_function(f_vektor, [q; qP; M; params...])
-g_flug_func, _ = Symbolics.build_function(g_flug, [q; params...])
-g_kontakt_func, _ = Symbolics.build_function(g_kontakt, [q; params...])
-F_N_func, _ = Symbolics.build_function(F_N, [q; qP; qPP; params...])
+g_flug_x_func, _ = Symbolics.build_function(g_flug[1], [q; params...])
+g_flug_z_func, _ = Symbolics.build_function(g_flug[2], [q; params...])
+g_kontakt_boden_func, _ = Symbolics.build_function(g_kontakt[3], [q; params...])
+F_N_func, _ = Symbolics.build_function(F_N, [q; qP; qPP]) #hier auf jeden Fall Symbolics mit Konstanten ersetzen! 
 
 
 #Ipopt-Modell bauen
@@ -22,6 +24,56 @@ dt = 0.01 # Zeitschrittgröße
 @variable(model, qP[1:4, 1:N])
 @variable(model, M[1:N])
 
+#Festen Abflugzeitpunkt festlegen
+abflug_zeit = 3.0 #sekunden
+k_abflug = Int(abflug_zeit / dt) #Iterationsschritt, bei dem der Abflug geschieht
+
+#Funktionen in JuMP registrieren
+register(model, :g_flug_x_reg, 4, g_flug_x_func; autodiff = true)
+register(model, :g_flug_z_reg, 4, g_flug_z_func; autodiff = true)
+register(model, :g_kontakt_reg, 4, g_kontakt_boden_func; autodiff = true)
+register(model, :F_N_reg, 12, F_N_func; autodiff = true)
+
+
+#geometrische Nebenbedingungen
+for k in 1:N
+    # Gelenk B immer geschlossen
+    @NLconstraint(model, g_flug_x_reg(q[1,k], q[2,k], q[3,k], q[4,k]) == 0)
+    @NLconstraint(model, g_flug_z_reg(q[1,k], q[2,k], q[3,k], q[4,k]) == 0)
+end
+for k in 1:k_abflug
+    #Fuß am Boden bis zum Abflug-Zeitpunkt
+    @NLconstraint(model, g_kontakt_reg(q[1,k], q[2,k], q[3,k], q[4,k]) == 0)
+end
+
+#Normalkraft, unterschieden zwischen Phasen
+@variable(model, F_norm[1:N])
+
+#F_norm[1] = m_ges * erdbeschl_g
+for k in 2:(N-1)
+    if k <= k_abflug #Kontaktphase
+        @NLconstraint(model, F_norm[k] >= 0)
+        @NLconstraint(model, F_norm[k] == F_N_reg(
+            q[1,k], q[2,k], q[3,k], q[4,k],
+            qP[1,k], qP[2,k], qP[3,k], qP[4,k],
+            # qPP eingesetzt via Finite Differenzen:
+            (q[1,k+1] - 2*q[1,k] + q[1,k-1]) / (dt^2),
+            (q[2,k+1] - 2*q[2,k] + q[2,k-1]) / (dt^2),
+            (q[3,k+1] - 2*q[3,k] + q[3,k-1]) / (dt^2),
+            (q[4,k+1] - 2*q[4,k] + q[4,k-1]) / (dt^2)
+        ))
+    else #Flugphase
+        @constraint(model, F_norm[k] == 0)
+    end
+end
+
+#Drehmoment einschränken
+M_max = 150.0
+@variable(model, M[1:N])
+for k in 1:N
+    set_lower_bound(M[k], -M_max)
+    set_upper_bound(M[k], M_max)
+end
 
 #Startwerte u.ä. übergeben
 #erzwingt aus startwert phi (in p) andere startwerte z, b30, b20
@@ -52,15 +104,12 @@ for k in 1:N
 end
 
 #Startwerte für Koord. und Geschw. übergeben
-@constraint(model, q[:, 1] == [start_phi, start_z, start_b30, start_b20])
+@constraint(model, q[:, 1] == [phi_start, z_start, b30_start, b20_start])
 @constraint(model, qP[:, 1] == zeros(4))
 
 #Endwert: Sprunghöhe (muss noch wirklich ausgewählt werden)
-zie_hoehe = 2.0
+ziel_hoehe = 2.0
 @constraint(model, q[2, N] = ziel_hoehe)
-
-abflug_zeit = 3.0 #sekunden
-k_abflug = (int)abflug_zeit / dt #Iterationsschritt, bei dem der Abflug geschieht
 
 #Nebenbedingungen (Bewegungsgl., geom. Bedingungen)
 
