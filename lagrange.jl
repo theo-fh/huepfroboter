@@ -1,18 +1,12 @@
 using Symbolics
 using Latexify
 
-#generalisierte Koordinaten
-@variables phi, z, b30, b20
-#ableitungen 
-@variables phiP, zP, b30P, b20P
-@variables phiPP, zPP, b30PP, b20PP
-#eingeprägte Kräfte
-@variables M, F2_Bx, F2_Bz, F3_Bx, F3_Bz
-
-
-#Konstanten
-@variables L, l, l_C, d, d_x, d_z, a_z, a_x, b, b_x, b_z, l_F, gam_F, gam_D, gam_B, l_S4x, l_S4z, l_S2, gam_S2, m_1, m_2, m_3, m_4, J_1, J_2, J_3, l_0, k, g
-
+#Variablen definieren
+Symbolics.@variables phi, z, b30, b20
+Symbolics.@variables phiP, zP, b30P, b20P
+Symbolics.@variables phiPP, zPP, b30PP, b20PP
+Symbolics.@variables M, F2_Bx, F2_Bz, F3_Bx, F3_Bz
+Symbolics.@variables L, l, l_C, d, d_x, d_z, a_z, a_x, b, b_x, b_z, l_F, gam_F, gam_D, gam_B, l_S4x, l_S4z, l_S2, gam_S2, m_1, m_2, m_3, m_4, J_1, J_2, J_3, l_0, k, g
 #=
 #Konstanten für Schwerpunkt-/Gelenkkoordinaten
 d = sqrt(d_x^2 + d_z^2)
@@ -39,11 +33,11 @@ T_3 = 1/2 * J_3*b30P^2 + 1/2 * m_3 * ((-L/2 * b30P * cos(b30))^2 + (zP + L/2 * b
 T_4 = 1/2 * m_4 * zP^2
 
 #Lagrange-Funktion L = T - V
-@variables L_func
+Symbolics.@variables L_func
 L_func = T_1 + T_2 + T_3 + T_4 - V_1 - V_2 - V_3 - V_4 - V_F
 
 #generalisierte Kräfte
-@variables Q_z, Q_phi, Q_b30, Q_b20
+Symbolics.@variables Q_z, Q_phi, Q_b30, Q_b20
 Q_phi = M + F2_Bz * l * sin(phi) - F2_Bx * l * cos(phi) 
 Q_z = F2_Bz + F3_Bz
 Q_b30 = -F3_Bx * L * cos(b30) + F3_Bz * L * sin(b30)
@@ -73,15 +67,15 @@ for i in 1:4
     end
 
     differenz = d_dt_dL_dqP[i] - dL_dq[i]
-    dL_diff[i] = simplify(differenz)
+    dL_diff[i] = Symbolics.simplify(differenz)
 end
 
 #Vektorfunktion f
 f_vektor = Vector{Any}(undef, length(q))
-f_vektor[1] = simplify(expand(dL_diff[1] - M - (J_1 + 0.25(l^2)*m_1 + (l^2)*m_2)*phiPP - (0.5l*m_1*sin(phi) + l*m_2*sin(phi))*zPP - b20PP*(cos(phi)*cos(b20 + gam_S2) + sin(b20 + gam_S2)*sin(phi))*l*l_S2*m_2))
-f_vektor[2] = simplify(expand(dL_diff[2] - zPP * (m_1 + m_2 + m_3 + m_4) - (1//2)*L*b30PP*m_3*sin(b30) - b20PP*l_S2*m_2*sin(b20 + gam_S2) - ((1//2)*l*m_1*sin(phi) + l*m_2*sin(phi))*phiPP))
-f_vektor[3] = simplify(expand(dL_diff[3] - (J_3 + 0.25(L^2)*m_3)*b30PP - 0.5L*zPP*m_3*sin(b30)))
-f_vektor[4] = simplify(expand(dL_diff[4] - zPP*l_S2*m_2*sin(b20 + gam_S2) - (cos(phi)*cos(b20 + gam_S2) + sin(b20 + gam_S2)*sin(phi))*l*l_S2*m_2*phiPP - b20PP*(J_2 + (l_S2^2)*m_2)))
+f_vektor[1] = Symbolics.simplify(expand(dL_diff[1] - M - (J_1 + 0.25(l^2)*m_1 + (l^2)*m_2)*phiPP - (0.5l*m_1*sin(phi) + l*m_2*sin(phi))*zPP - b20PP*(cos(phi)*cos(b20 + gam_S2) + sin(b20 + gam_S2)*sin(phi))*l*l_S2*m_2))
+f_vektor[2] = Symbolics.simplify(expand(dL_diff[2] - zPP * (m_1 + m_2 + m_3 + m_4) - (1//2)*L*b30PP*m_3*sin(b30) - b20PP*l_S2*m_2*sin(b20 + gam_S2) - ((1//2)*l*m_1*sin(phi) + l*m_2*sin(phi))*phiPP))
+f_vektor[3] = Symbolics.simplify(expand(dL_diff[3] - (J_3 + 0.25(L^2)*m_3)*b30PP - 0.5L*zPP*m_3*sin(b30)))
+f_vektor[4] = Symbolics.simplify(expand(dL_diff[4] - zPP*l_S2*m_2*sin(b20 + gam_S2) - (cos(phi)*cos(b20 + gam_S2) + sin(b20 + gam_S2)*sin(phi))*l*l_S2*m_2*phiPP - b20PP*(J_2 + (l_S2^2)*m_2)))
 
 #Massenmatrix
 M_q = Matrix{Any}(undef, length(q), length(q))
@@ -102,19 +96,19 @@ M_q[4,2] = l_S2*m_2*sin(b20 + gam_S2)
 M_q[4,3] = 0
 M_q[4,4] = J_2 + (l_S2^2)*m_2
 
-@variables F_Bx, F_Bz
+Symbolics.@variables F_Bx, F_Bz
 
 #Generalisierte Kräfte ← Gelenkkraft B
 Q_ZB = Vector{Any}(undef, length(q))
 Q_ZB[1] = -F_Bz * l * sin(phi) + F_Bx * l * cos(phi)
 Q_ZB[2] = 0
 Q_ZB[3] = F_Bz * L * sin(b30) - F_Bx * L * cos(b30)
-Q_ZB[4] = -F_Bz * b * sin(b20 + gam_B) + F_Bz * b * cos(b20 + gam_B)
+Q_ZB[4] = -F_Bz * b * sin(b20 + gam_B) + F_Bx * b * cos(b20 + gam_B)
 
-@variables F, z_S
+Symbolics.@variables F, z_S
 
 #schwerpunkt des gesamtsystems → ableiten für Normalkraft am Fuß
-z_S = (1/(m_1 + m_2 + m_3 + m_4)) * (m_1 * (z - cos(phi) * l/2) + m_2 * (z - cos(phi) * l - cos(b20 + gam_S2) * l_S2) + m_3 * (z - a_z - cos(b30 * L/2)) + m_4 * (z - l_S4z))
+z_S = (1/(m_1 + m_2 + m_3 + m_4)) * (m_1 * (z - cos(phi) * l/2) + m_2 * (z - cos(phi) * l - cos(b20 + gam_S2) * l_S2) + m_3 * (z - a_z - cos(b30) * L/2) + m_4 * (z - l_S4z))
 z_SP = 0
 z_SPP = 0
 
@@ -167,7 +161,7 @@ for i in 1:4
 end
 
 #Nebenbedingungen
-gelenkB_x = -sin(phi) * l - sin(b20 + gam_B) * b + a_x + sin(b30 + gam_B) * b
+gelenkB_x = -sin(phi) * l - sin(b20 + gam_B) * b + a_x + sin(b30) * L
 gelenkB_z = -cos(phi) * l - cos(b20 + gam_B) * b + a_z + cos(b30) * L
 bodenkontaktF = z - cos(phi) * l - cos(b20 + gam_F) * l_F
 
@@ -180,3 +174,12 @@ g_kontakt[1] = gelenkB_x
 g_kontakt[2] = gelenkB_z
 g_kontakt[3] = bodenkontaktF
 #g_flug und g_kontakt jeweils = 0
+
+#Q_ZF umbestimmen
+Symbolics.@variables F_norm_var #Symbolischer Platzhalter, dafür wird später F_norm einem constraint übergeben
+Q_ZF_mit_Fnorm = [
+    F_norm_var * l * sin(phi),
+    F_norm_var,
+    0,
+    F_norm_var * l_F * sin(b20 + gam_F)
+]
